@@ -1,0 +1,17 @@
+<launch>
+  <node pkg="puzzle_game_framework" type="main.py" name="puzzle_game_framework" output="screen"/>
+
+  <arg name="config_path" default="$(find robot_behaviour)/src/robot_behaviour/config/sentences"/>
+      <param name="/config_path" value="$(arg config_path)" />
+  <arg name="user_id" default="0000" />
+      <param name="/user_id" value="$(arg user_id)" />
+  <arg name="session_id" default="0000" />
+      <param name="/session_id" value="$(arg session_id)" /> 
+  <arg name="objective" default="descending_odd" />
+      <param name="/objective" value="$(arg objective)" /> 
+  <arg name="with_feedback" default="True" />
+      <param name="/with_feedback" value="$(arg with_feedback)" />
+  <arg name="timeout" default="15" />
+      <param name="/timeout" value="$(arg timeout)" />
+
+</launch>
