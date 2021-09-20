@@ -148,7 +148,7 @@ class Game(object):
 
   def set_objective(self, n_token):
     '''The method return a list with the tokens ordered based on the solution of the exercise'''
-    
+
     if self.objective == "morse":
       self.solution = ["M", "O", "R", "S", "E"]
     elif self.objective == "godel":
@@ -228,6 +228,40 @@ class Game(object):
       for c in range(self.width):
         if token_from == c+(r*self.width)+1:
           return r+1
+
+  def get_area(self, n=3):
+    '''This method returns the subset n of tokens closed to the correct token'''
+    token_id, token_from, token_to = self.get_token_sol()
+    '''three cases can happen: 
+    1:the solution is at the right side of the board
+    2:the solution is in the middle
+    3:the solution is at the left side of the board
+    N.B: when getting the token from the array we need to decrease the counter of 1 as the counter 
+    of the list starts from 0
+    '''
+    for c in range(1, self.height):
+      if token_from == self.width*(c+1):
+        #case 1
+
+        tokens_subset = [(token_id, token_from), (self.current_board[token_from-3], token_from-2),
+                         (self.current_board[token_from-2], token_from-1)]
+        tokens_subset_no_empty = [token for token in tokens_subset if token[0] != "0"]
+        return 2
+
+      elif token_from == (self.width*c)+1:
+        #case 3
+        tokens_subset = [(token_id, token_from), (self.current_board[token_from], token_from+1),
+                         (self.current_board[token_from+1], token_from+2)]
+        tokens_subset_no_empty = [token for token in tokens_subset if token[0] != "0"]
+        return 0
+
+    #case 2
+    tokens_subset = [(token_id, token_from), (self.current_board[token_from-2], token_from-1),
+                     (self.current_board[token_from], token_from+1)]
+    tokens_subset_no_empty = [token for token in tokens_subset if token[0] != "0"]
+
+    return 1
+
 
   def get_subset(self, n=3):
     '''This method returns the subset n of tokens closed to the correct token'''
