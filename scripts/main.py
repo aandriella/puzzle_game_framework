@@ -141,10 +141,10 @@ class StateMachine(enum.Enum):
     game.n_tot_sociable += 1
     game.agent_feedback = 1
     if game.detected_token[0] == game.solution[game.n_correct_move]:
-      (agent.action["pick"].__call__(True, 3, 2))
+      thread.start_new_thread((agent.action["pick"].__call__), (True, 3, 2))
     else:
-      (agent.action["pick"].__call__(False, 3, 2))
-    self.CURRENT_STATE = self.S_USER_PLACE
+      thread.start_new_thread((agent.action["pick"].__call__), (False, 3, 2))
+      self.CURRENT_STATE = self.S_USER_PLACE
     self.agent_provided_feeback_finished = True
     return self.agent_provided_feeback_finished
 
@@ -165,32 +165,32 @@ class StateMachine(enum.Enum):
     #token_row = game.get_token_row()
     delay_for_speech = 1
     #game.agent_assistance = 3  # agent.get_irl_state_action(state_index=state_index, epsilon=epsilon)
-    counter = 0
+    counter = 3
 
 
     if game.n_attempt_per_token == 1:
       game.agent_assistance = 0
       delay_for_speech = 1
-      counter = 0
     elif game.n_attempt_per_token == 2:
       game.agent_assistance = 1
-      delay_for_speech = 6
-      counter = 3
+      delay_for_speech = 5
     elif game.n_attempt_per_token == 3:
       game.agent_assistance = 2
       delay_for_speech = 6
-      counter = 0
 
-    elif game.n_attempt_per_token == 4:
+    elif game.n_attempt_per_token >= 4:
       game.agent_assistance = 3
       delay_for_speech = 6
-      counter = 0
     else:
       print("MAx attempt")
       game.agent_assistance = random.randint(0,3)
 
-    rospy.sleep(1.0)
+
+    game.agent_assistance = 3
+
+    rospy.sleep(0.5)
     thread.start_new_thread(agent.action["assistance"].__call__, (game.agent_assistance, token_sol, tokens_area, counter, delay_for_speech,))
+    #thread.start_new_thread(agent.action["assistance"].__call__, (0, token_sol, tokens_area, counter, delay_for_speech,))
 
     self.b_agent_assist_finished = True
     self.b_agent_reengaged_user == False
@@ -272,7 +272,7 @@ class StateMachine(enum.Enum):
         or game.detected_token[2] != game.solution.index(game.detected_token[0]) + 1:
       game.outcome = 1
       print("wrong_solution")
-      (agent.action["compassion"].__call__(3, 5))
+      thread.start_new_thread((agent.action["compassion"].__call__), (3, 4))
       self.CURRENT_STATE = self.S_USER_MOVE_TOKEN_BACK
       #if agent replace with
       #self.agent_move_back(game, agent)
@@ -324,14 +324,14 @@ class StateMachine(enum.Enum):
     # agent moved it back
     # get the initial location of the placed token and move back there
     token_id, token_from = game.get_token_init_loc(game.detected_token[0])
-    thread.start_new_thread(agent.action["move_back"].__call__, ( 4,))
+    #thread.start_new_thread(agent.action["move_back"].__call__, ( 4,))
     curr_token_id, _, curr_token_to = game.detected_token
     time_elapsed = 0
     current_time = time.time()
     while (curr_token_id == token_id and curr_token_to != token_from):
       curr_token_id, _, curr_token_to = game.detected_token
       time_elapsed = time.time() - current_time
-      if time_elapsed >= 10.0:
+      if time_elapsed >= 5.0:
         thread.start_new_thread(agent.action["move_back"].__call__,(4,))
         current_time = time.time()
 
@@ -485,8 +485,9 @@ def main():
   config_path = rospy.get_param("/config_path")
   personality = rospy.get_param("/personality")
   gender = rospy.get_param("/gender")
+  language = rospy.get_param("/language")
 
-  audio_folder = config_path+"/"+gender+"/"+personality+"/cat/"
+  audio_folder = config_path+"/"+gender+"/"+personality+"/"+language
 
   user_id = rospy.get_param("/user_id")
   with_feedback = rospy.get_param("/with_feedback")
@@ -502,7 +503,7 @@ def main():
   bn_user_action = {'correct': 0, 'wrong': 1, 'timeout': 2}
 
   # we create the game instance
-  game = Game(board_size=(5, 4), task_length=5, n_max_attempt_per_token=4,
+  game = Game(board_size=(5, 4), task_length=5, n_max_attempt_per_token=10,
               timeout = timeout, objective = objective, sociable = with_feedback,
               bn_game_state = bn_game_state,
               bn_attempt = bn_attempt,
@@ -597,7 +598,7 @@ def main():
         sm.CURRENT_STATE = sm.S_ROBOT_OUTCOME
       else:
         sm.CURRENT_STATE = sm.S_USER_ACTION
-        sm.agent_provide_assistance(game, tiago_agent, state_index=states_space_list.index(tuple(current_state)), epsilon=0.3)
+        sm.agent_provide_assistance(game, tiago_agent, state_index=(), epsilon=0.3)
         game.avg_agent_assistance_per_move += game.agent_assistance
 
     elif sm.CURRENT_STATE.value == sm.S_USER_ACTION.value:
