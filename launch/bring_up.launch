@@ -15,11 +15,15 @@
       <param name="/with_feedback" value="$(arg with_feedback)" />
   <arg name="timeout" default="15000" />
       <param name="/timeout" value="$(arg timeout)" />
+  <arg name="language" default="cat" />
+      <param name="/language" value="$(arg language)" />
+  <arg name="gender" default="female" />
+      <param name="/gender" value="$(arg gender)" />
 
-  <include file="$(find robot_facial_expression)/launch/robot_facial_expression.launch" />
+  <!-- <include file="$(find robot_facial_expression)/launch/robot_facial_expression.launch" />
   <arg name="gender" default="female" />
       <param name="/gender" value="$(arg gender)" />
 
   <node pkg="robot_face_visualizer" type="face_visualizer.py" name="robot_face_visualizer" />
-
+  -->
 </launch>
