@@ -486,21 +486,18 @@ def main():
   personality = rospy.get_param("/personality")
   gender = rospy.get_param("/gender")
   language = rospy.get_param("/language")
-
   audio_folder = config_path+"/"+gender+"/"+personality+"/"+language
-
   user_id = rospy.get_param("/user_id")
   with_feedback = rospy.get_param("/with_feedback")
   objective = rospy.get_param("/objective")
-  session_id = rospy.get_param("/session_id")
   timeout = rospy.get_param("/timeout")
 
 
-  bn_game_state = {'beg': 2, 'mid': 4, 'end': 5}
-  bn_attempt = {'att_1': 0, 'att_2': 1, 'att_3': 2, 'att_4': 3}
-  bn_agent_assistance = {'lev_0': 0, 'lev_1': 1, 'lev_2': 2, 'lev_3': 3, 'lev_4': 4, 'lev_5': 5}
-  bn_user_react_time = {'fast': 5, 'normal': 10, 'slow': 15}
-  bn_user_action = {'correct': 0, 'wrong': 1, 'timeout': 2}
+  bn_game_state = ""
+  bn_attempt = ""
+  bn_agent_assistance = ""
+  bn_user_react_time = ""
+  bn_user_action = ""
 
   # we create the game instance
   game = Game(board_size=(5, 4), task_length=5, n_max_attempt_per_token=10,
@@ -511,13 +508,6 @@ def main():
               bn_user_react_time = bn_user_react_time,
               bn_user_action = bn_user_action)
 
-  attempt = [i for i in range(1,len(bn_attempt) + 1)]
-  # +1 (3,_,_) absorbing state
-  game_state = [i for i in range(0, len(bn_game_state) + 1)]
-  user_action = [i for i in range(0, len(bn_user_action))]
-  state_space = (game_state, attempt, user_action)
-  states_space_list = list(itertools.product(*state_space))
-  state_space_index = [states_space_list.index(tuple(s)) for s in states_space_list]
 
   # we create the agent instance
   face = Face()
@@ -527,21 +517,14 @@ def main():
 
   policy_filename = ""#parent_dir_of_file+"/robot-patient-interaction/"+str(user_id)+"/"+str(with_feedback)+"/"+str(session_id)+"/policy.pkl"
   tiago_agent = Robot(audio_folder, policy_filename, face)
-  path_name = parent_dir_of_file + "/robot-patient-interaction/" + str(user_id) + "/" + str(with_feedback) + "/" + str(session_id)
-
-  if not os.path.exists(path_name):
-    os.makedirs(path_name)
-  else:
-    print("Error the directory already exists")
-    input = raw_input("Would you like to continue anyway?")
-
+  path_name = parent_dir_of_file + "/robot-patient-interaction/" + str(user_id) + "/" + str(with_feedback)
   file_params = path_name + "/log_params.csv"
-  file_spec = path_name + "/log_spec.csv"
-  file_gen = path_name + "/log_gen.csv"
-  file_summary = path_name + "/log_summary.csv"
-  file_bn_variables = path_name + "/bn_variables.csv"
-
-
+  try:
+    os.makedirs(path_name)
+  except OSError:
+    print ("Creation of the directory %s failed" % path_name)
+  else:
+    print ("Successfully created the directory %s " % path_name)
 
   print("You are playing with the following letters: ", game.current_board)
   print("The solution of the game is ", game.solution)
@@ -549,47 +532,23 @@ def main():
   if input == "q":
     exit(-1)
 
-  entry_log_params = {"user_id":"user_id", "session":"session", "with_feedback":"with_feedback", "objective":"objective", "timeout":"timeout"}
-  entry_log_spec = {'game_state': 'game_state', 'user_react_time': 'user_react_time', 'user_action': 'user_action',
-                    'token_id': 'token_id', 'from': 'from', 'to': 'to',
-                    'agent_assistance': 'agent_assistance', "react_time": 'react_time',
-                    'elapsed_time': 'elapsed_time', "attempt": 'attempt', "timeout": 'timeout',
-                    "agent_feedback": 'agent_feedback'}
-  entry_log_gen = {"game_state":"game_state","token_id": 'token_id', 'user_action': 'user_action', "from": 'from', "to": 'to',
-                   "avg_agent_assistance_per_move": 'avg_agent_assistance_per_move',
-                   "cum_react_time": "cum_react_time", "cum_elapsed_time": "cum_elapsed_time",
-                   "attempt": "attempt",
-                   "timeout": "timeout", "n_agent_feedback": "n_agent_feedback"}
-  entry_log_summary = {"n_attempt": "n_attempt", "n_timeout": "n_timeout", "n_agent_feedback": "n_agent_feedback",
-                        "avg_lev_assistance": "avg_lev_assistance",
-                          "tot_react_time": "tot_react_time",
-                          "tot_elapsed_time": "tot_elapsed_time"}
-  entry_bn_variables = {"game_state": "game_state", "attempt": "attempt",
-                        "agent_assistance": "agent_assistance",
-                        "user_action": "user_action"}
+  entry_log_params = {"user_id":"user_id",  "with_feedback":"with_feedback", "objective":"objective", "timeout":"timeout"}
 
   log = Log(filename_params=file_params, fieldnames_params = entry_log_params,
-            filename_spec=file_spec, fieldnames_spec=entry_log_spec, filename_gen=file_gen,
-            fieldnames_gen = entry_log_gen, filename_sum = file_summary, fieldnames_sum = entry_log_summary,
-            filename_bn_vars=file_bn_variables, fieldnames_bn_vars=entry_bn_variables)
+            filename_spec="", fieldnames_spec="", filename_gen="",
+            fieldnames_gen = "", filename_sum = "", fieldnames_sum = "",
+            filename_bn_vars="", fieldnames_bn_vars="")
 
-  log.add_row_entry(log_filename=file_spec, fieldnames=entry_log_spec, data=entry_log_spec)
-  log.add_row_entry(log_filename=file_gen, fieldnames=entry_log_gen, data=entry_log_gen)
-  log.add_row_entry(log_filename=file_summary, fieldnames=entry_log_summary, data=entry_log_summary)
-  log.add_row_entry(log_filename=file_bn_variables, fieldnames=entry_bn_variables, data=entry_bn_variables)
   log.add_row_entry(log_filename=file_params, fieldnames=entry_log_params, data=entry_log_params)
-
-
-  data_log_params = {"user_id":user_id, "session":session_id, "with_feedback":with_feedback, "objective":objective, "timeout":timeout}
+  data_log_params = {"user_id":user_id, "with_feedback":with_feedback, "objective":objective, "timeout":timeout}
   log.add_row_entry(log_filename=file_params, fieldnames=entry_log_params, data=data_log_params)
 
   sm = StateMachine(1)
 
-  #tiago_agent.action["instruction"].__call__("instruction_"+str(objective), facial_expression="neutral", eyes_coords=(0,0))
+  tiago_agent.action["instruction"].__call__("instruction.wav", 24)
 
   while game.get_n_correct_move() < game.task_length:
-    current_state=(game.map_game_state(), game.n_attempt_per_token, game.outcome)
-    print(current_state)
+
 
     if sm.CURRENT_STATE.value == sm.S_ROBOT_ASSIST.value:
       #expected_token = game.get_token_sol()
@@ -599,13 +558,11 @@ def main():
       else:
         sm.CURRENT_STATE = sm.S_USER_ACTION
         sm.agent_provide_assistance(game, tiago_agent, state_index=(), epsilon=0.3)
-        game.avg_agent_assistance_per_move += game.agent_assistance
 
     elif sm.CURRENT_STATE.value == sm.S_USER_ACTION.value:
       print("Expected token ", game.solution[game.get_n_correct_move()])
       time_to_act = time.time()
 
-      #game.with_feedback = 1#random.randint(0,1)
       sm.user_action(game, tiago_agent)
       game.total_elapsed_time += time.time() - time_to_act
 
@@ -613,25 +570,17 @@ def main():
       # these are reported only because the variables are already reset when a correct move occurred
       sm.agent_provide_outcome(game, tiago_agent)
 
-      if (game.outcome == 0 or (game.outcome == 2 and game.n_attempt_per_token == game.n_max_attempt_per_token)
-          or (game.outcome == 1 and game.n_attempt_per_token == game.n_max_attempt_per_token)):
-        data_log_gen = game.store_info_gen()
-        log.add_row_entry(log_filename=file_gen, fieldnames=entry_log_gen, data=data_log_gen)
-        game.reset_counters_gen()
-
-      data_log_spec = game.store_info_spec(game.outcome)
-      data_bn_variables = game.store_bn_variables(game.outcome)
-      log.add_row_entry(log_filename=file_spec, fieldnames=entry_log_spec, data=data_log_spec)
-      log.add_row_entry(log_filename=file_bn_variables, fieldnames=entry_bn_variables,
-                        data=data_bn_variables)
+      # if (game.outcome == 0 or (game.outcome == 2 and game.n_attempt_per_token == game.n_max_attempt_per_token)
+      #     or (game.outcome == 1 and game.n_attempt_per_token == game.n_max_attempt_per_token)):
+      #   data_log_gen = game.store_info_gen()
+      #   log.add_row_entry(log_filename=file_gen, fieldnames=entry_log_gen, data=data_log_gen)
+      #   game.reset_counters_gen()
 
       sm.update_counters(game)
       game.reset_counters_spec()
       game.reset_detected_token()
 
   (tiago_agent.action["end_game"].__call__(5))
-  data_log_summary = game.store_info_summary()
-  log.add_row_entry(log_filename=file_summary, fieldnames=entry_log_summary, data=data_log_summary)
 
   for instance_spec in game.move_info_spec_vect:
     print(instance_spec)
