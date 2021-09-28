@@ -7,15 +7,13 @@
       <param name="/user_id" value="$(arg user_id)" />
   <arg name="personality" default="praise" />
       <param name="/personality" value="$(arg personality)" />
-  <arg name="session_id" default="0000" />
-      <param name="/session_id" value="$(arg session_id)" /> 
   <arg name="objective" default="godel" />
       <param name="/objective" value="$(arg objective)" /> 
   <arg name="with_feedback" default="True" />
       <param name="/with_feedback" value="$(arg with_feedback)" />
   <arg name="timeout" default="15000" />
       <param name="/timeout" value="$(arg timeout)" />
-  <arg name="language" default="cat" />
+  <arg name="language" default="esp" />
       <param name="/language" value="$(arg language)" />
   <arg name="gender" default="female" />
       <param name="/gender" value="$(arg gender)" />
